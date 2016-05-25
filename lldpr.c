@@ -29,6 +29,7 @@ int main()
 {
     int sock, status, i;
     uint8_t *ether_frame;
+    uint16_t ether_type;
 
     ether_frame = (uint8_t *) malloc(IP_MAXPACKET * sizeof(uint8_t));
     
@@ -72,9 +73,9 @@ int main()
 
 
 uint16_t get_ether_type(uint8_t * ether_frame) {
-    uint16_t ether_type;
+    uint16_t * ether_type;
 
-    ether_type = ether_frame[13] + (ether_frame[12] << 8);
+    ether_type = (uint16_t *) &ether_frame[12];
 
-    return ether_type;
+    return htons(*ether_type);
 }
