@@ -22,6 +22,9 @@
 #define ETH_P_LLDP 0x88CC
 
 
+uint16_t get_ether_type(uint8_t *);
+
+
 int main()
 {
     int sock, status, i;
@@ -53,7 +56,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    printf ("Ethernet type code: %u\n", ((ether_frame[12]) << 8) + ether_frame[13]);
+    printf ("Ethernet type code: 0x%04x\n", get_ether_type(ether_frame));
 	printf ("\nEthernet frame header:\n");
 	printf ("Destination MAC (this node): ");
 	for (i=0; i<5; i++) {
@@ -65,4 +68,13 @@ int main()
 	    printf ("%02x:", ether_frame[i+6]);
 	}
     printf ("%02x\n", ether_frame[11]);
+}
+
+
+uint16_t get_ether_type(uint8_t * ether_frame) {
+    uint16_t ether_type;
+
+    ether_type = ether_frame[13] + (ether_frame[12] << 8);
+
+    return ether_type;
 }
