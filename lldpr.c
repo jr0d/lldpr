@@ -30,9 +30,8 @@ typedef struct {
 
 typedef struct {
     uint16_t type_len; // type = 7 bits, len = 9 bits
-    uint8_t * data;
+    uint8_t * data; // not correct, do something else
 } lldp_tlv;
-
 
 /* Prototypes */
 
@@ -42,7 +41,7 @@ void mac_address_fmt(uint8_t *addr, char *buff);
 
 int main()
 {
-    int sock, status;
+    int sock, status, cnt;
 
     ethernet_header * eh;
     lldp_tlv * tlv_data;
@@ -71,7 +70,7 @@ int main()
 
 
     eh = (ethernet_header *) packet;
-
+    cnt = 0;
     while(1) {
         status = recv(sock, packet, IP_MAXPACKET, 0);
 
@@ -79,11 +78,12 @@ int main()
             perror("Problem getting packet");
             exit(EXIT_FAILURE);
         }
+        cnt++;
         if (htons(eh->type) == ETH_P_LLDP)
             break;
 
-        if (htons(eh->type) != 0x0800)
-            printf("Got packet, just not the right one: 0x%04x\n", htons(eh->type));
+        // if (htons(eh->type) != 0x0800)
+        //    printf("Got packet, just not the right one: 0x%04x\n", htons(eh->type));
 
         memset(packet, 0, IP_MAXPACKET * sizeof(uint8_t));
     }
@@ -91,22 +91,43 @@ int main()
     close(sock);
 
     printf ("LLDP packet received! Ethernet type code: 0x%04x\n", htons(eh->type));
-	printf ("\nEthernet frame header:\n");
+    printf ("\nEthernet frame header:\n");
 
     mac_address_fmt(eh->dest, dest_address);
     mac_address_fmt(eh->src, src_address);
 
-	printf ("Destination MAC (this node): %s\n", dest_address);
-	printf ("Source MAC: %s\n", src_address);
+    printf ("Destination MAC (this node): %s\n", dest_address);
+    printf ("Source MAC: %s\n", src_address);
 
-    tlv_data = (lldp_tlv * ) eh + sizeof(eh);
+    printf("%lu\n", sizeof(ethernet_header));
+    tlv_data = (lldp_tlv * ) &packet[sizeof(ethernet_header)];
+    tlv_data->data = ((uint8_t *) tlv_data) + 2;
 
-    tlv_type = tlv_data->type_len >> 9;
-    tlv_length = tlv_data->type_len & 0x01ff;
+    printf("packet: %p, tlv: %p\n", packet + 14, tlv_data);
+    printf("packet: %p\n", packet);
+    tlv_type = ntohs(tlv_data->type_len) >> 9;
+    tlv_length = ntohs(tlv_data->type_len) & 0x01ff;
 
     printf("tlv_type: %d , tlv_length: %d\n", tlv_type, tlv_length);
-
+    printf("structure: %04x\n", ntohs(tlv_data->type_len));
+    printf("Total packets: %d\n", cnt);
     printf("Goto bed \n");
+    
+    FILE * fp, * fp2;
+    fp = fopen("/tmp/packet", "wb");
+    fp2 = fopen("/tmp/tlv_data", "wb");
+    fwrite(packet, 1, IP_MAXPACKET, fp);
+    fwrite(tlv_data, 1, sizeof(tlv_data), fp2);
+    fclose(fp);
+ 
+//     char type_one_mac[MAC_STRING_LEN];
+//     mac_address_fmt(tlv_data->data, type_one_mac);
+//     printf("TYPE1 MAC: %s\n", type_one_mac);
+    
+    
+    lldp_tlv * tlv2 = (lldp_tlv *) &packet[23];
+    printf("Explicit Address: %p, tlv1 data address: %p\n", tlv2, &tlv_data->data);
+    printf("TLV2: type: %d , len: %d\n", ntohs(tlv2->type_len) >> 9, ntohs(tlv2->type_len) & 0x01ff);
 }
 
 void mac_address_fmt(uint8_t *addr, char *buff) {
