@@ -32,10 +32,14 @@ typedef struct {
     uint8_t type;
     uint16_t length;
     uint8_t *data;
-} lldp_tlv;
+} TLV;
+
+struct lldp_tlv_list {
+    TLV *next;
+    TLV *tlv;
+};
 
 /* Prototypes */
-
 void mac_address_fmt(uint8_t *addr, char *buff);
 
 /* MAIN */
@@ -43,23 +47,31 @@ void mac_address_fmt(uint8_t *addr, char *buff);
 int main()
 {
     int sock = 0;
-    int status = 0;
     int cnt = 0;
     
     size_t  packet_len = 0;
 
     uint8_t tlv_type = 0;
+    uint8_t tlv_subtype = 0;
+    uint8_t msap_address[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
     uint8_t *packet = NULL;
-    uint8_t *tlv_info_string = NULL
+    uint8_t *tlv_info_string = NULL;
+
     uint16_t *tlv_header = 0;
     uint16_t tlv_length = 0;
     uint16_t tlv_offset = 0;
+    uint16_t msap_ttl = 0;
+
+    char msap_mac_t1[MAC_STRING_LEN];
+    char msap_mac_t2[MAC_STRING_LEN];
+    char dest_address[MAC_STRING_LEN];
+    char src_address[MAC_STRING_LEN];
     
-    char dest_address[MAC_STRING_LEN] = NULL;
-    char  src_address[MAC_STRING_LEN] = NULL;
+    char *info_string = NULL;
     
+    struct lldp_tlv_list *tlv_list = NULL;
     ethernet_header *eh = NULL;
-    lldp_tlv *tlv = NULL;
+    TLV *tlv = NULL;
 
     packet = (uint8_t *) malloc(IP_MAXPACKET * sizeof(uint8_t));
     
@@ -70,7 +82,7 @@ int main()
     
     memset(packet, 0, IP_MAXPACKET * sizeof(uint8_t));
 
-    if (sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL)) < 0){
+    if ((sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0){
         perror("socket() failed");
         exit (EXIT_FAILURE);
     }
@@ -78,6 +90,7 @@ int main()
 
 
     eh = (ethernet_header *) packet;
+    // timer / timeout
     while(1) {
         packet_len = recv(sock, packet, IP_MAXPACKET, 0);
 
@@ -97,6 +110,15 @@ int main()
 
     close(sock);
 
+    // Write debug packet
+    
+    FILE * fp;
+    fp = fopen("/tmp/packet", "wb");
+    fwrite(packet, 1, packet_len, fp);
+    fclose(fp);
+
+    // Done
+
     printf ("LLDP packet received! Ethernet type code: 0x%04x\n", htons(eh->type));
     printf ("\nEthernet frame header:\n");
 
@@ -106,29 +128,64 @@ int main()
     printf ("Destination MAC (this node): %s\n", dest_address);
     printf ("Source MAC: %s\n", src_address);
 
-    printf("%lu\n", sizeof(ethernet_header));
-    tlv_header = (uint16_t * ) &packet[sizeof(ethernet_header) + tlv_offset];
+    printf("Total packets: %d\n\n", cnt);
 
-    tlv_type = htons(tlv_header) >> 9;
-    tlv_length = htons(tlv_header) & 0x01ff;
-
-    printf("tlv_type: %d , tlv_length: %d\n", tlv_type, tlv_length);
-    printf("structure: %04x\n", tlv_header;
-    printf("Total packets: %d\n", cnt);
-    printf("Goto bed \n");
+    // BEGIN TLV loop
     
-    FILE * fp, * fp2;
-    fp = fopen("/tmp/packet", "wb");
-    fwrite(packet, 1, packet_len, fp);
-    fclose(fp);
- 
-//     char type_one_mac[MAC_STRING_LEN];
-//     mac_address_fmt(tlv_data->data, type_one_mac);
-//     printf("TYPE1 MAC: %s\n", type_one_mac);
-    tlv_info_string = (uint8_t *) &packet[sizeof(ethernet_frame) + sizeof(*tlv_header) + tlv_offset];
-    // init tlv
-    // line 205 openlldp
-    tlv_offset += sizeof(*tlv_header) + tlv_length;
+    do {
+        tlv_header = (uint16_t * ) &packet[sizeof(ethernet_header) + tlv_offset];
+
+        tlv_type = htons(*tlv_header) >> 9;
+        tlv_length = htons(*tlv_header) & 0x01ff;
+
+        tlv_info_string = (uint8_t *) &packet[sizeof(ethernet_header) + sizeof(*tlv_header) + tlv_offset];
+
+        tlv = (TLV *) calloc(1, sizeof(TLV));
+        tlv->type = tlv_type;
+        tlv->length = tlv_length;
+        if(tlv_length > 0) {
+            tlv->data = (uint8_t *) calloc(1, tlv_length);
+            memcpy(tlv->data, tlv_info_string, tlv_length);
+        }
+
+        tlv_offset += sizeof(*tlv_header) + tlv_length;
+
+        printf("TLV: %u\n", tlv->type);
+        printf("TLV Length: %d\n", tlv->length);
+        printf("TLV info string: ");
+
+        switch (tlv->type) {
+            case 0:
+                printf("End of TLV\n");
+                break;
+            case 1:
+                tlv_subtype = tlv->data[0];
+                memcpy(&msap_address, tlv->data+1, tlv_length-1);
+                mac_address_fmt(msap_address, msap_mac_t1);
+                printf("SUBTYPE: %d - MSAP ADDRESS: %s\n", tlv_subtype, msap_mac_t1);
+                break;
+            case 2:
+                tlv_subtype = tlv->data[0];
+                if(tlv_subtype == 3) {
+                    memcpy(&msap_address, tlv->data+1, tlv_length-1);
+                    mac_address_fmt(msap_address, msap_mac_t2);
+                    printf("SUBTYPE: %d - PORT ID MAC: %s\n", tlv_subtype, msap_mac_t2);
+                    break;
+                } else if(tlv_subtype == 5) {
+                    info_string = (char *) calloc(1, tlv_length + 1);
+                    strncpy(info_string, (const char *) tlv->data+1, tlv_length-1);
+                    info_string[tlv_length] = '\0';
+                    printf("SUBTYPE: %d - PORT ID INTERFACE %s\n", tlv_subtype, info_string);
+                    free(info_string);
+                    break;
+                } else
+                    printf("SUBTYPE: %d - SUBTYPE unhandled\n", tlv_subtype);
+            default:
+                printf("Type unhandled\n");
+        }
+        printf("TLV Offset: %d\n", tlv_offset);
+        printf("\n");
+    } while(tlv_type != 0);
 }
 
 void mac_address_fmt(uint8_t *addr, char *buff) {
