@@ -180,6 +180,10 @@ int main()
                     break;
                 } else
                     printf("SUBTYPE: %d - SUBTYPE unhandled\n", tlv_subtype);
+            case 3:
+                msap_ttl = ntohs(*(uint16_t *) &tlv->data[0]);
+                printf("TTL: %d\n", msap_ttl);
+                break;
             default:
                 printf("Type unhandled\n");
         }
