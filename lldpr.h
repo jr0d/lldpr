@@ -54,8 +54,8 @@ struct tlv_port_id {
 /* macros */
 
 #define calc_offset(O) sizeof(ethernet_header) + O
-#define TLV_TYPE(U16BE) (uint8_t) U16BE >> 9
-#define TLV_LENGTH(U16BE) (uint16_t) U16BE & 0x01ff
+#define TLV_TYPE(U16BE) (uint8_t) (U16BE >> 9)
+#define TLV_LENGTH(U16BE) (uint16_t) (U16BE & 0x01ff)
 
 /* Prototypes */
 extern void mac_address_fmt(uint8_t *addr, char *buff);
