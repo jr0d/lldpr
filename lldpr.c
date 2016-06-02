@@ -30,7 +30,7 @@ void tlv_list_push(lldp_tlv_list *head, TLV *tlv) {
         current = current->next;
 
     current->next = tlv_list_create();
-    current->next = tlv;
+    current->tlv = tlv;
     current->next->next = NULL;
 }
 
@@ -45,14 +45,14 @@ lldp_tlv_list parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {
     uint16_t tlv_offset = 0;
 
     do {
-        tlv_header = (uint16_t *) &packet[calc_offset(tlv_offset)]; 
-        current_tlv (TLV *) calloc(1, sizeof(TLV));
+        tlv_header = (uint16_t *) &packet[calc_offset(tlv_offset)];
+        current_tlv = (TLV *) calloc(1, sizeof(TLV));
         current_tlv->type = TLV_TYPE(htons(*tlv_header));
         current_tlv->length = TLV_LENGTH(htons(*tlv_header));
 
         if (current_tlv->length > 0) {
-            current_tlv->data (uint8_t *) calloc(1, current_tlv->length);
-            memcpy(tlv->data, (uint8_t *) &packet[cacl_offset(tlv_offset) + sizeof(*tlv_header)], current_tlv->length) 
+            current_tlv->data = (uint8_t *) calloc(1, current_tlv->length);
+            memcpy(tlv->data, (uint8_t *) &packet[cacl_offset(tlv_offset) + sizeof(*tlv_header)], current_tlv->length);
         } else
             current_tlv->data = NULL;
    

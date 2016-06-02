@@ -22,20 +22,20 @@
 
 /* typedefs */
 
-typedef struct {
+typedef struct ethernet_header{
     uint8_t dest[6];
     uint8_t src[6];
     uint16_t type;
 } ethernet_header;
 
-typedef struct {
+typedef struct TLV{
     uint8_t type;
     uint16_t length;
     uint8_t *data;
 } TLV;
 
-typedef struct {
-    TLV *next;
+typedef struct lldp_tlv_list {
+    struct lldp_tlv_list *next;
     TLV *tlv;
 } lldp_tlv_list;
 
@@ -54,8 +54,8 @@ struct tlv_port_id {
 /* macros */
 
 #define calc_offset(O) sizeof(ethernet_header) + O
-#define TLV_TYPE(U16BE) U16BE >> 9
-#define TLV_LENGTH(U16BE) U16BE & 0x01ff
+#define TLV_TYPE(U16BE) (uint8_t) U16BE >> 9
+#define TLV_LENGTH(U16BE) (uint16_t) U16BE & 0x01ff
 
 /* Prototypes */
 extern void mac_address_fmt(uint8_t *addr, char *buff);
