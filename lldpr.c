@@ -19,6 +19,50 @@
 
 #include "lldpr.h"
 
+
+lldp_tlv_list * tlv_list_create() {
+    return (lldp_tlv_list *) calloc(1, sizeof(lldp_tlv_list));
+}
+
+void tlv_list_push(lldp_tlv_list *head, TLV *tlv) {
+    lldp_tlv_list *current = head;
+    while (current->next != NULL) 
+        current = current->next;
+
+    current->next = tlv_list_create();
+    current->next = tlv;
+    current->next->next = NULL;
+}
+
+lldp_tlv_list parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {
+    /*
+     * Iterate over TLVs. Expload TLVs and store them in a linked list. Validations should occur before calling this function
+     */
+
+    TLV *current_tlv;
+    uint16_t *tlv_header = 0;
+    uint16_t tlv_length = 0;
+    uint16_t tlv_offset = 0;
+
+    do {
+        tlv_header = (uint16_t *) &packet[calc_offset(tlv_offset)]; 
+        current_tlv (TLV *) calloc(1, sizeof(TLV));
+        current_tlv->type = TLV_TYPE(htons(*tlv_header));
+        current_tlv->length = TLV_LENGTH(htons(*tlv_header));
+
+        if (current_tlv->length > 0) {
+            current_tlv->data (uint8_t *) calloc(1, current_tlv->length);
+            memcpy(tlv->data, (uint8_t *) &packet[cacl_offset(tlv_offset) + sizeof(*tlv_header)], current_tlv->length) 
+        } else
+            current_tlv->data = NULL;
+   
+        tlv_offset += sizeof(*tlv_header) + current_tlv->length;
+        
+        if (tlv_list->tlv == NULL)
+
+    } while(current_tlv->type != 0);
+}
+
 /* MAIN */
 
 int main()
@@ -46,7 +90,7 @@ int main()
     
     char *info_string = NULL;
     
-    struct lldp_tlv_list *tlv_list = NULL;
+    lldp_tlv_list *tlv_list = NULL;
     ethernet_header *eh = NULL;
     TLV *tlv = NULL;
 
@@ -110,12 +154,12 @@ int main()
     // BEGIN TLV loop
     
     do {
-        tlv_header = (uint16_t * ) &packet[sizeof(ethernet_header) + tlv_offset];
+        tlv_header = (uint16_t * ) &packet[calc_offset(tlv_offset)];
 
         tlv_type = htons(*tlv_header) >> 9;
         tlv_length = htons(*tlv_header) & 0x01ff;
 
-        tlv_info_string = (uint8_t *) &packet[sizeof(ethernet_header) + sizeof(*tlv_header) + tlv_offset];
+        tlv_info_string = (uint8_t *) &packet[calc_offset(tlv_offset) + sizeof(*tlv_header)];  // AKA sizeof(uint16_t) (2 bytes)
 
         tlv = (TLV *) calloc(1, sizeof(TLV));
         tlv->type = tlv_type;
