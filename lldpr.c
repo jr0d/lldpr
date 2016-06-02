@@ -17,30 +17,7 @@
 
 #include <errno.h>            // errno, perror()
 
-
-#define ETH_P_ALL 0x0003
-#define ETH_P_LLDP 0x88CC
-#define MAC_STRING_LEN 18     // FF:FF:FF:FF:FF:FF\0
-
-typedef struct {
-    uint8_t dest[6];
-    uint8_t src[6];
-    uint16_t type;
-} ethernet_header;
-
-typedef struct {
-    uint8_t type;
-    uint16_t length;
-    uint8_t *data;
-} TLV;
-
-struct lldp_tlv_list {
-    TLV *next;
-    TLV *tlv;
-};
-
-/* Prototypes */
-void mac_address_fmt(uint8_t *addr, char *buff);
+#include "lldpr.h"
 
 /* MAIN */
 
@@ -181,8 +158,8 @@ int main()
                 } else
                     printf("SUBTYPE: %d - SUBTYPE unhandled\n", tlv_subtype);
             case 3:
-                msap_ttl = ntohs(*(uint16_t *) &tlv->data[0]);
-                printf("TTL: %d\n", msap_ttl);
+                msap_ttl = *(uint16_t *) &tlv->data[0];
+                printf("TTL: %d : %04x\n", ntohs(msap_ttl), msap_ttl);
                 break;
             default:
                 printf("Type unhandled\n");
