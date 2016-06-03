@@ -1,7 +1,6 @@
 //
 // Created by jared on 6/2/16.
 //
-#define NDEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -67,7 +67,7 @@ void tlv_list_destroy(lldp_tlv_list *head) {
 
 void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {
     /*
-     * Iterate over TLVs. Expload TLVs and store them in a linked list. Validations should occur before calling this function
+     * Iterate over TLVs. Explode TLVs and store them in a linked list. Validations should occur before calling this function
      */
 
     TLV *current_tlv = NULL;
