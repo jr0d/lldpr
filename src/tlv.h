@@ -1,5 +1,5 @@
-/* Many of these definitions were copied from the tlv/tlv.h file. Per their licence, I will include
-their copyright and license
+/* Many of these definitions were copied from tlv/tlv.h of the openLLDP project.
+ * Per their instruction, I will include their copyright and license
 
  Copyright (c) 2010, OpenLLDP Project
 All rights reserved.
@@ -59,13 +59,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* CHASSIS ID SUBTYPES */
 
-#define CHASSIS_ID_CHASSIS_COMPONENT = 0x01
-#define CHASSIS_ID_INTERFACE_ALIAS = 0x02
-#define CHASSIS_ID_PORT_COMPONANT = 0x3
-#define CHASSIS_ID_MAC_ADDRESS       4
-#define CHASSIS_ID_NETWORK_ADDRESS   5
-#define CHASSIS_ID_INTERFACE_NAME    6
-#define CHASSIS_ID_LOCALLY_ASSIGNED  7
+#define CHASSIS_ID_CHASSIS_COMPONENT 0x01
+#define CHASSIS_ID_INTERFACE_ALIAS 0x02
+#define CHASSIS_ID_PORT_COMPONANT 0x3
+#define CHASSIS_ID_MAC_ADDRESS 0x4
+#define CHASSIS_ID_NETWORK_ADDRESS 0x5
+#define CHASSIS_ID_INTERFACE_NAME    0x6
+#define CHASSIS_ID_LOCALLY_ASSIGNED  0x7
 
 /* PORT ID SUBTYPES */
 
@@ -78,7 +78,48 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define PORT_ID_LOCALLY_ASSIGNED 7
 
 /* SYSTEM CAPABILITIES */
+#define SYSTEM_CAPABILITY_OTHER     1
+#define SYSTEM_CAPABILITY_REPEATER  2
+#define SYSTEM_CAPABILITY_BRIDGE    4
+#define SYSTEM_CAPABILITY_WLAN      8
+#define SYSTEM_CAPABILITY_ROUTER    16
+#define SYSTEM_CAPABILITY_TELEPHONE 32
+#define SYSTEM_CAPABILITY_DOCSIS    64
+#define SYSTEM_CAPABILITY_STATION   128
+
 /* MANAGEMENT ADDRESS IANA TYPES */
+/* IANA Family Number Assignments */
+/* http://www.iana.org/assignments/address-family-numbers */
+#define IANA_RESERVED_LOW     0
+#define IANA_IP               1
+#define IANA_IP6              2
+#define IANA_NSAP             3
+#define IANA_HDLC             4
+#define IANA_BBN_1822         5
+#define IANA_802              6
+#define IANA_E_163            7
+#define IANA_E_164_ATM        8
+#define IANA_F_69             9
+#define IANA_X_121           10
+#define IANA_IPX             11
+#define IANA_APPLETALK       12
+#define IANA_DECNET_IV       13
+#define IANA_BANYAN_VINES    14
+#define IANA_E_164_NSAP      15
+#define IANA_DNS             16
+#define IANA_DISTINGUISHED   17
+#define IANA_AS_NUMBER       18
+#define IANA_XTP_IPV4        19
+#define IANA_XTP_IPV6        20
+#define IANA_XTP_XTP         21
+#define IANA_FIBRE_PORT_NAME 22
+#define IANA_FIBRE_NODE_NAME 23
+#define IANA_GWID            24
+#define IANA_AFI_L2VPN       25
+// Everything from 26 to 65534 is Unassigned
+#define IANA_RESERVED_HIGH   65535
+/* End IANA Family Number Assignments */
+
 /* ORG IEEE 802.1 */
 /* ORG IEEE 802.3 */
 
