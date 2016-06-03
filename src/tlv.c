@@ -5,21 +5,64 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "lldpr.h"
+#include "debug.h"
 #include "tlv.h"
 
 
 lldp_tlv_list * tlv_list_create() {
-    return (lldp_tlv_list *) calloc(1, sizeof(lldp_tlv_list));
+    lldp_tlv_list * _tlv_list;
+    _tlv_list = (lldp_tlv_list *) calloc(1, sizeof(lldp_tlv_list));
+    _tlv_list->tlv = NULL;
+    _tlv_list->next = NULL;
+    return _tlv_list;
 }
 
 void tlv_list_push(lldp_tlv_list *head, TLV *tlv) {
+    if (head->tlv == NULL) {
+        debug("Pushed onto new list : TLV - %d\n", tlv->type);
+        head->tlv = tlv;
+        return;
+    }
     lldp_tlv_list *current = head;
-    while (current->next != NULL)
+    while (current->next != NULL) {
         current = current->next;
-
+    }
     current->next = tlv_list_create();
-    current->tlv = tlv;
-    current->next->next = NULL;
+    current->next->tlv = tlv;
+}
+
+lldp_tlv_list * tlv_list_remove_tail(lldp_tlv_list *head) {
+    lldp_tlv_list *current = head;
+    lldp_tlv_list *previous = current;
+
+    debug("IN tlv_list_remove: TOP");
+    debug("CURRENT->NEXT: 0x%p", current->next);
+    if (current->next == NULL) {
+        // Encountered an empty or single entry list
+        debug("FREEING HEAD");
+        free(current->tlv);
+        return NULL;
+    }
+    while (current->next != NULL) {
+        debug("IN WHILE CURRENT->NEXT: 0x%p", current->next);
+        previous = current;
+        current = current->next;
+    }
+    debug("IN tlv_list_remove: BOTTOM : CURRENT->TLV-TYPE : %d\n", current->tlv->type);
+    free(current->tlv);
+    free(current);
+    previous->next = NULL;
+    return previous;
+}
+
+void tlv_list_destroy(lldp_tlv_list *head) {
+    lldp_tlv_list *previous = NULL;
+    log_info("TLV_DESTROY");
+    do {
+        previous = tlv_list_remove_tail(head);
+    } while(previous != NULL);
+
+    free(head);
 }
 
 void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {

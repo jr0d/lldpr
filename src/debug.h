@@ -31,5 +31,8 @@
 
 #define check_debug(A, M, ...) if(!(A)) { debug(M, ##__VA_ARGS__); errno=0; goto error; }
 
+#define HEADER "******************************************************"
+#define PRINT_HEADER(M, ...) printf("\n" HEADER "\n\t" M "\n" HEADER "\n\n", ##__VA_ARGS__)
+
 #endif
 

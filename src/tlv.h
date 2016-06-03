@@ -1,4 +1,4 @@
-//
+ //
 // Created by jared on 6/2/16.
 //
 
@@ -59,9 +59,10 @@ struct tlv_port_id {
 
 
 /* prototypes */
-
-lldp_tlv_list * tlv_list_create();
 void tlv_list_push(lldp_tlv_list *head, TLV *tlv);
+void tlv_list_destroy(lldp_tlv_list *head);
+lldp_tlv_list * tlv_list_create();
+lldp_tlv_list * tlv_list_remove_tail(lldp_tlv_list *head);
 
 extern void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head);
 extern void print_tlv(TLV *tlv);
