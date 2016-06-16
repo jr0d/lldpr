@@ -13,14 +13,18 @@
 #include <netinet/ip.h>       // IP_MAXPACKET (65535)
 
 #include <net/ethernet.h>
-
+#include <net/if.h>
+#include <sys/ioctl.h>
 
 #include "lldpr.h"
+#include "debug.h"
 
-uint8_t * fetch_lldp_packet() {
+uint8_t * fetch_lldp_packet(char * ifname, time_t timeout) {
     int sock = 0;
     int cnt = 0;
     ssize_t packet_len = 0;
+
+    time_t start_time = 0;
 
     char dest_address[MAC_STRING_LEN];
     char src_address[MAC_STRING_LEN];
@@ -29,6 +33,8 @@ uint8_t * fetch_lldp_packet() {
 
     ethernet_header *eh = NULL;
     packet = (uint8_t *) malloc(IP_MAXPACKET * sizeof(uint8_t));
+
+    struct ifreq ifr;
 
     if(packet == NULL) {
         perror("Could not allocate memory for packet buffer");
@@ -41,12 +47,27 @@ uint8_t * fetch_lldp_packet() {
         perror("socket() failed");
         exit (EXIT_FAILURE);
     }
-    // setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, "eno1", strlen("eno1") + 1);
 
+    debug("Binding to interface %s", ifname);
+    setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, ifname, (socklen_t) strlen(ifname) + 1);
+
+    strncpy(ifr.ifr_name, ifname, strnlen(ifname, 20) + 1);
+
+    ioctl(sock, SIOCGIFFLAGS, &ifr);
+
+    ifr.ifr_flags |= IFF_PROMISC;
+
+    debug("Entering promiscuous mode on %s", ifname);
+    ioctl(sock, SIOCSIFFLAGS, &ifr);
 
     eh = (ethernet_header *) packet;
     // timer / timeout
+    start_time = time(NULL);
     while(1) {
+        if (time(NULL) - start_time > timeout) {
+            fprintf(stderr, "Packet not received prior to timeout. Timeout: %lu\n", timeout);
+            exit(1);
+        }
         packet_len = recv(sock, packet, IP_MAXPACKET, 0);
 
         if (packet_len < 0) {
@@ -65,20 +86,21 @@ uint8_t * fetch_lldp_packet() {
 
     close(sock);
 
-    printf ("LLDP packet received! Ethernet type code: 0x%04x\n", htons(eh->type));
-    printf ("\nEthernet frame header:\n");
+    debug("LLDP packet received! Ethernet type code: 0x%04x\n", htons(eh->type));
+    debug("\nEthernet frame header:\n");
 
     mac_address_fmt(eh->dest, dest_address);
     mac_address_fmt(eh->src, src_address);
 
-    printf ("Destination MAC (this node): %s\n", dest_address);
-    printf ("Source MAC: %s\n", src_address);
+    debug("Destination MAC (this node): %s\n", dest_address);
+    debug("Source MAC: %s\n", src_address);
 
-    printf("Total packets: %d\n\n", cnt);
+    debug("Total packets: %d\n\n", cnt);
     return packet;
 }
 
-void mac_address_fmt(uint8_t *addr, char *buff) {
+char * mac_address_fmt(uint8_t *addr, char *buff) {
     snprintf(buff, MAC_STRING_LEN, "%02x:%02x:%02x:%02x:%02x:%02x",
             addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+    return buff;
 }

@@ -57,12 +57,22 @@ lldp_tlv_list * tlv_list_remove_tail(lldp_tlv_list *head) {
 
 void tlv_list_destroy(lldp_tlv_list *head) {
     lldp_tlv_list *previous = NULL;
-    log_info("TLV_DESTROY");
+    debug("TLV_DESTROY");
     do {
         previous = tlv_list_remove_tail(head);
     } while(previous != NULL);
 
     free(head);
+}
+
+TLV *get_tlv(lldp_tlv_list *head, uint16_t tlv_type) {
+    lldp_tlv_list * current = head;
+    while(current->tlv != NULL) {
+        if (current->tlv->type == tlv_type)
+            return current->tlv;
+        current = current->next;
+    }
+    return NULL;
 }
 
 void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {
@@ -87,7 +97,7 @@ void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {
             current_tlv->data = NULL;
 
         tlv_offset += sizeof(*tlv_header) + current_tlv->length;
-        printf("Pushing TLV type : %d\n", current_tlv->type);
+        debug("Pushing TLV type : %d\n", current_tlv->type);
         tlv_list_push(head, current_tlv);
 
     } while(current_tlv->type != 0);
@@ -96,7 +106,6 @@ void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {
 void print_tlv(TLV *tlv) {
     size_t one = 1;  // IDEs are supposed to help you write better code?
     uint8_t tlv_subtype = 0;
-    uint8_t msap_address[6];
 
     uint16_t msap_ttl = 0;
 
@@ -113,16 +122,12 @@ void print_tlv(TLV *tlv) {
             break;
         case TLV_CHASSIS_ID:
             tlv_subtype = tlv->data[0];
-            memcpy(&msap_address, tlv->data+1, tlv->length-one);
-            mac_address_fmt(msap_address, msap_mac_t1);
-            printf("SUBTYPE: %d - MSAP ADDRESS: %s\n", tlv_subtype, msap_mac_t1);
+            printf("SUBTYPE: %d - MSAP ADDRESS: %s\n", tlv_subtype, mac_address_fmt(tlv->data+1, msap_mac_t1));
             break;
         case TLV_PORT_ID:
             tlv_subtype = tlv->data[0];
             if(tlv_subtype == 3) {
-                memcpy(&msap_address, tlv->data+1, tlv->length-one);
-                mac_address_fmt(msap_address, msap_mac_t2);
-                printf("SUBTYPE: %d - PORT ID MAC: %s\n", tlv_subtype, msap_mac_t2);
+                printf("SUBTYPE: %d - PORT ID MAC: %s\n", tlv_subtype, mac_address_fmt(tlv->data+1, msap_mac_t2));
                 break;
             } else if(tlv_subtype == 5) {
                 info_string = (char *) calloc(1, tlv->length+ 1);

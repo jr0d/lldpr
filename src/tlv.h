@@ -161,5 +161,6 @@ lldp_tlv_list * tlv_list_remove_tail(lldp_tlv_list *head);
 
 extern void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head);
 extern void print_tlv(TLV *tlv);
+TLV * get_tlv(lldp_tlv_list *head, uint16_t  tlv_type);
 
 #endif //LLDPR_TLV_H

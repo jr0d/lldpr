@@ -6,6 +6,7 @@
 #define MAC_STRING_LEN 18     // FF:FF:FF:FF:FF:FF\0
 
 #include <stdint.h>
+#include <time.h>
 
 typedef struct ethernet_header{
     uint8_t dest[6];
@@ -20,6 +21,6 @@ typedef struct ethernet_header{
 
 
 /* Prototypes */
-extern void mac_address_fmt(uint8_t *addr, char *buff);
-extern uint8_t * fetch_lldp_packet();
+extern char * mac_address_fmt(uint8_t *addr, char *buff);
+extern uint8_t * fetch_lldp_packet(char * interface, time_t timeout);
 #endif // LLDPR_H
