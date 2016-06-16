@@ -105,6 +105,8 @@ void parse_lldp_packet(uint8_t *packet, lldp_tlv_list *head) {
 
 void print_tlv(TLV *tlv) {
     size_t one = 1;  // IDEs are supposed to help you write better code?
+    uint8_t mgmt_addr_len = 0;
+    uint8_t mgmt_addr_type = 0;
     uint8_t tlv_subtype = 0;
 
     uint16_t msap_ttl = 0;
@@ -141,6 +143,11 @@ void print_tlv(TLV *tlv) {
         case TLV_TTL:
             msap_ttl = *(uint16_t *) &tlv->data[0];
             printf("TTL: %d : %04x\n", ntohs(msap_ttl), msap_ttl);
+            break;
+        case TLV_MGMT_ADDR:
+            mgmt_addr_len = tlv->data[0];
+            mgmt_addr_type = tlv->data[1];
+            printf("MGMT ADDR LEN: %d, TYPE: %d\n", mgmt_addr_len, mgmt_addr_type);
             break;
         default:
             printf("Type unhandled\n");
