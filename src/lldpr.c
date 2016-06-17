@@ -61,8 +61,9 @@ uint8_t * fetch_lldp_packet(char * ifname, time_t timeout) {
     ioctl(sock, SIOCSIFFLAGS, &ifr);
 
     eh = (ethernet_header *) packet;
-    // timer / timeout
+
     start_time = time(NULL);
+
     while(1) {
         if (time(NULL) - start_time > timeout) {
             fprintf(stderr, "Packet not received prior to timeout. Timeout: %lu\n", timeout);
@@ -84,16 +85,18 @@ uint8_t * fetch_lldp_packet(char * ifname, time_t timeout) {
         memset(packet, 0, IP_MAXPACKET * sizeof(uint8_t));
     }
 
+    debug("Disabling promiscuous mode");
+    ifr.ifr_flags ^= IFF_PROMISC;
+    ioctl(sock, SIOCSIFFLAGS, &ifr);
+
+    debug("Closing socket")
     close(sock);
 
     debug("LLDP packet received! Ethernet type code: 0x%04x\n", htons(eh->type));
     debug("\nEthernet frame header:\n");
 
-    mac_address_fmt(eh->dest, dest_address);
-    mac_address_fmt(eh->src, src_address);
-
-    debug("Destination MAC (this node): %s\n", dest_address);
-    debug("Source MAC: %s\n", src_address);
+    debug("Destination MAC (this node): %s\n", mac_address_fmt(eh->dest, dest_address););
+    debug("Source MAC: %s\n", mac_address_fmt(eh->src, src_address););
 
     debug("Total packets: %d\n\n", cnt);
     return packet;

@@ -50,7 +50,6 @@ int main(int argc, char **argv)
     printf("%s ", info_string);
     free(info_string);
 
-    tlv_list_destroy(tlv_list);
     if (port_id_tlv->data[0] == 3) {
         printf("%s\n", mac_address_fmt(port_id_tlv->data+1, mac_address));
     } else if(port_id_tlv->data[0] == 5) {
@@ -64,6 +63,7 @@ int main(int argc, char **argv)
         exit(2);
     }
 
+    tlv_list_destroy(tlv_list);
     free(packet);
     return EXIT_SUCCESS;
 }
