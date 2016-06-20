@@ -19,6 +19,10 @@
 #include "lldpr.h"
 #include "debug.h"
 
+ssize_t recv_t(int sock, uint8_t * buffer, time_t timeout) {
+    struct pollfd
+}
+
 uint8_t * fetch_lldp_packet(char * ifname, time_t timeout) {
     int sock = 0;
     int cnt = 0;
