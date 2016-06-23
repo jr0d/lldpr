@@ -111,7 +111,6 @@ void print_tlv(TLV *tlv) {
 
     uint16_t msap_ttl = 0;
 
-    char msap_mac_t1[MAC_STRING_LEN], msap_mac_t2[MAC_STRING_LEN];
     char *info_string = NULL;
 
     printf("TLV: %u\n", tlv->type);
@@ -124,12 +123,12 @@ void print_tlv(TLV *tlv) {
             break;
         case TLV_CHASSIS_ID:
             tlv_subtype = tlv->data[0];
-            printf("SUBTYPE: %d - MSAP ADDRESS: %s\n", tlv_subtype, mac_address_fmt(tlv->data+1, msap_mac_t1));
+            printf("SUBTYPE: %d - MSAP ADDRESS: %s\n", tlv_subtype, mac_address_fmt(tlv->data+1));
             break;
         case TLV_PORT_ID:
             tlv_subtype = tlv->data[0];
             if(tlv_subtype == 3) {
-                printf("SUBTYPE: %d - PORT ID MAC: %s\n", tlv_subtype, mac_address_fmt(tlv->data+1, msap_mac_t2));
+                printf("SUBTYPE: %d - PORT ID MAC: %s\n", tlv_subtype, mac_address_fmt(tlv->data+1));
                 break;
             } else if(tlv_subtype == 5) {
                 info_string = (char *) calloc(1, tlv->length+ 1);

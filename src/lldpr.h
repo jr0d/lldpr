@@ -21,6 +21,6 @@ typedef struct ethernet_header{
 
 
 /* Prototypes */
-extern char * mac_address_fmt(uint8_t *addr, char *buff);
+extern char * mac_address_fmt(uint8_t *addr);
 extern uint8_t * fetch_lldp_packet(char * interface, time_t timeout);
 #endif // LLDPR_H

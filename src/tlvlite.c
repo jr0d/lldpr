@@ -20,7 +20,6 @@ int main(int argc, char **argv)
     char *info_string = NULL;
 
     char ifname[20] = "\0";
-    char mac_address[MAC_STRING_LEN] = "\0";
 
     if (argc < 2) {
         fprintf(stderr, "Usage: lldplite <interface>\n");
@@ -51,7 +50,7 @@ int main(int argc, char **argv)
     free(info_string);
 
     if (port_id_tlv->data[0] == 3) {
-        printf("%s\n", mac_address_fmt(port_id_tlv->data+1, mac_address));
+        printf("%s\n", mac_address_fmt(port_id_tlv->data+1));
     } else if(port_id_tlv->data[0] == 5) {
         info_string = (char *) calloc(1, port_id_tlv->length + 1);
         strncpy(info_string, (const char *) port_id_tlv->data + 1, port_id_tlv->length - (size_t) 1);
