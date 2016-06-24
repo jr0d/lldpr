@@ -17,6 +17,8 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 
+#include <linux/if_packet.h>
+
 #include "lldpr.h"
 #include "debug.h"
 
@@ -91,10 +93,14 @@ ssize_t recv_t(int sock, uint8_t * packet, uint8_t * hwaddr, time_t timeout) {
 uint8_t * fetch_lldp_packet(char * ifname, time_t timeout) {
     int sock = 0;
     uint8_t *packet = NULL;
+    uint8_t mac_address[6];
+    struct ifreq ifr;
+    struct sockaddr_ll saddr_ll;
+
+    memset(&ifr, 0, sizeof(ifr));
+    memset(&saddr_ll, 0, sizeof(saddr_ll));
 
     packet = (uint8_t *) malloc(IP_MAXPACKET * sizeof(uint8_t));
-
-    struct ifreq ifr;
 
     if(packet == NULL) {
         perror("Could not allocate memory for packet buffer");
@@ -103,30 +109,51 @@ uint8_t * fetch_lldp_packet(char * ifname, time_t timeout) {
 
     memset(packet, 0, IP_MAXPACKET * sizeof(uint8_t));
 
-    if ((sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0){
+    if ((sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0){
         perror("socket() failed");
         exit (EXIT_FAILURE);
     }
 
-    debug("Binding to interface %s", ifname);
-    setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, ifname, (socklen_t) strlen(ifname) + 1);
-
     strncpy(ifr.ifr_name, ifname, strnlen(ifname, 20) + 1);
 
-    ioctl(sock, SIOCGIFFLAGS, &ifr);
+    ioctl(sock, SIOCGIFINDEX, &ifr);
+
+    if(ifr.ifr_ifindex == 0) {
+        fprintf(stderr, "Interface %s does not seem to exist\n", ifname);
+        exit(EXIT_FAILURE);
+    }
+
+    saddr_ll.sll_ifindex = ifr.ifr_ifindex;
+    saddr_ll.sll_family = AF_PACKET;
+
+    debug("Binding to interface %s, if_index %d", ifname, saddr_ll.sll_ifindex);
+
+    if ((bind(sock, (struct sockaddr *) &saddr_ll, sizeof(saddr_ll))) < 0) {
+        perror("Bind failed");
+        exit(EXIT_FAILURE);
+    }
+
     ioctl(sock, SIOCGIFHWADDR, &ifr);
 
-    debug("HWADDR: %s", mac_address_fmt((uint8_t *) ifr.ifr_hwaddr.sa_data));
+    memcpy(&mac_address, (void *) ifr.ifr_hwaddr.sa_data, 6);
+
+    debug("HWADDR: %s", mac_address_fmt(mac_address));
+
+
+    debug("Entering promiscuous mode on %s", ifname);
+
+    ioctl(sock, SIOCGIFFLAGS, &ifr);
 
     ifr.ifr_flags |= IFF_PROMISC;
 
-    debug("Entering promiscuous mode on %s", ifname);
     ioctl(sock, SIOCSIFFLAGS, &ifr);
 
-    recv_t(sock, packet, (uint8_t *) ifr.ifr_hwaddr.sa_data, timeout);
+    recv_t(sock, packet, mac_address, timeout);
 
     debug("Disabling promiscuous mode");
+
     ifr.ifr_flags ^= IFF_PROMISC;
+
     ioctl(sock, SIOCSIFFLAGS, &ifr);
 
     debug("Closing socket");
